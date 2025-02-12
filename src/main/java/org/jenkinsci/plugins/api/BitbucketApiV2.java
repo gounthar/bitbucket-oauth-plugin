@@ -64,7 +64,5 @@ public class BitbucketApiV2 extends DefaultApi20 {
             Response response = request.send();
             return api.getAccessTokenExtractor().extract(response.getBody());
         }
-
     }
-
 }

@@ -1,13 +1,12 @@
 package org.jenkinsci.plugins.api;
 
+import com.google.gson.Gson;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.logging.Logger;
-
-import org.acegisecurity.userdetails.UserDetails;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
@@ -18,8 +17,7 @@ import org.scribe.model.Token;
 import org.scribe.model.Verb;
 import org.scribe.model.Verifier;
 import org.scribe.oauth.OAuthService;
-
-import com.google.gson.Gson;
+import org.springframework.security.core.userdetails.UserDetails;
 
 public class BitbucketApiService {
 
@@ -35,7 +33,10 @@ public class BitbucketApiService {
 
     public BitbucketApiService(String apiKey, String apiSecret, String callback) {
         super();
-        ServiceBuilder builder = new ServiceBuilder().provider(BitbucketApiV2.class).apiKey(apiKey).apiSecret(apiSecret);
+        ServiceBuilder builder = new ServiceBuilder()
+                .provider(BitbucketApiV2.class)
+                .apiKey(apiKey)
+                .apiSecret(apiSecret);
         if (StringUtils.isNotBlank(callback)) {
             builder.callback(callback);
         }
@@ -144,5 +145,4 @@ public class BitbucketApiService {
             return null;
         }
     }
-
 }

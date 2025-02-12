@@ -1,13 +1,13 @@
 package org.jenkinsci.plugins;
 
-import org.acegisecurity.GrantedAuthority;
-import org.acegisecurity.providers.AbstractAuthenticationToken;
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.api.BitbucketApiService;
 import org.jenkinsci.plugins.api.BitbucketUser;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.scribe.model.Token;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.providers.AbstractAuthenticationToken;
 
 public class BitbucketAuthenticationToken extends AbstractAuthenticationToken {
 
@@ -57,7 +57,7 @@ public class BitbucketAuthenticationToken extends AbstractAuthenticationToken {
     }
 
     @Restricted(NoExternalUse.class)
-    public BitbucketUser getBitbucketUser(){
+    public BitbucketUser getBitbucketUser() {
         return bitbucketUser;
     }
 }

@@ -1,19 +1,25 @@
 package org.jenkinsci.plugins;
 
+import com.thoughtworks.xstream.converters.ConversionException;
+import com.thoughtworks.xstream.converters.Converter;
+import com.thoughtworks.xstream.converters.MarshallingContext;
+import com.thoughtworks.xstream.converters.UnmarshallingContext;
+import com.thoughtworks.xstream.io.HierarchicalStreamReader;
+import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
+import hudson.Extension;
+import hudson.Util;
+import hudson.model.Descriptor;
+import hudson.model.User;
+import hudson.security.GroupDetails;
+import hudson.security.SecurityRealm;
+import hudson.security.UserMayOrMayNotExistException;
+import hudson.util.Secret;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import javax.servlet.http.HttpSession;
-
-import org.acegisecurity.Authentication;
-import org.acegisecurity.AuthenticationException;
-import org.acegisecurity.AuthenticationManager;
-import org.acegisecurity.BadCredentialsException;
-import org.acegisecurity.context.SecurityContextHolder;
-import org.acegisecurity.userdetails.UserDetails;
-import org.acegisecurity.userdetails.UserDetailsService;
-import org.acegisecurity.userdetails.UsernameNotFoundException;
+import jenkins.model.Jenkins;
+import jenkins.security.SecurityListener;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.api.BitbucketApiService;
@@ -27,24 +33,14 @@ import org.kohsuke.stapler.HttpResponses;
 import org.kohsuke.stapler.StaplerRequest;
 import org.scribe.model.Token;
 import org.springframework.dao.DataAccessException;
-
-import com.thoughtworks.xstream.converters.ConversionException;
-import com.thoughtworks.xstream.converters.Converter;
-import com.thoughtworks.xstream.converters.MarshallingContext;
-import com.thoughtworks.xstream.converters.UnmarshallingContext;
-import com.thoughtworks.xstream.io.HierarchicalStreamReader;
-import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
-
-import hudson.Extension;
-import hudson.Util;
-import hudson.model.Descriptor;
-import hudson.model.User;
-import hudson.security.GroupDetails;
-import hudson.security.SecurityRealm;
-import hudson.security.UserMayOrMayNotExistException;
-import hudson.util.Secret;
-import jenkins.model.Jenkins;
-import jenkins.security.SecurityListener;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.AuthenticationManager;
+import org.springframework.security.core.BadCredentialsException;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 public class BitbucketSecurityRealm extends SecurityRealm {
 
@@ -53,8 +49,10 @@ public class BitbucketSecurityRealm extends SecurityRealm {
     private static final Logger LOGGER = Logger.getLogger(BitbucketSecurityRealm.class.getName());
 
     private String clientID;
+
     @Deprecated
     private String clientSecret;
+
     private Secret secretClientSecret;
 
     @DataBoundConstructor
@@ -121,7 +119,8 @@ public class BitbucketSecurityRealm extends SecurityRealm {
     public HttpResponse doCommenceLogin(StaplerRequest request, @Header("Referer") final String referer)
             throws IOException {
 
-        String state = RandomStringUtils.random(64, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~");
+        String state =
+                RandomStringUtils.random(64, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~");
         request.getSession().setAttribute(STATE_ATTRIBUTE, state);
         request.getSession().setAttribute(REFERER_ATTRIBUTE, referer);
 
@@ -135,7 +134,8 @@ public class BitbucketSecurityRealm extends SecurityRealm {
         }
         String callback = rootUrl + "/securityRealm/finishLogin";
 
-        BitbucketApiService bitbucketApiService = new BitbucketApiService(clientID, getSecretClientSecret().getPlainText(), callback);
+        BitbucketApiService bitbucketApiService =
+                new BitbucketApiService(clientID, getSecretClientSecret().getPlainText(), callback);
 
         return new HttpRedirect(bitbucketApiService.createAuthorizationCodeURL(null, state));
     }
@@ -169,7 +169,8 @@ public class BitbucketSecurityRealm extends SecurityRealm {
 
         if (!accessToken.isEmpty()) {
 
-            BitbucketAuthenticationToken auth = new BitbucketAuthenticationToken(accessToken, clientID, rawClientSecret);
+            BitbucketAuthenticationToken auth =
+                    new BitbucketAuthenticationToken(accessToken, clientID, rawClientSecret);
             SecurityContextHolder.getContext().setAuthentication(auth);
 
             User u = User.current();
@@ -195,20 +196,22 @@ public class BitbucketSecurityRealm extends SecurityRealm {
 
     @Override
     public SecurityComponents createSecurityComponents() {
-        return new SecurityRealm.SecurityComponents(new AuthenticationManager() {
-            public Authentication authenticate(Authentication authentication) throws AuthenticationException {
-                if (authentication instanceof BitbucketAuthenticationToken) {
-                    return authentication;
-                }
+        return new SecurityRealm.SecurityComponents(
+                new AuthenticationManager() {
+                    public Authentication authenticate(Authentication authentication) throws AuthenticationException {
+                        if (authentication instanceof BitbucketAuthenticationToken) {
+                            return authentication;
+                        }
 
-                throw new BadCredentialsException("Unexpected authentication type: " + authentication);
-            }
-        }, new UserDetailsService() {
-            public UserDetails loadUserByUsername(String username)
-                    throws UserMayOrMayNotExistException, DataAccessException {
-                throw new UserMayOrMayNotExistException("Cannot verify users in this context");
-            }
-        });
+                        throw new BadCredentialsException("Unexpected authentication type: " + authentication);
+                    }
+                },
+                new UserDetailsService() {
+                    public UserDetails loadUserByUsername(String username)
+                            throws UserMayOrMayNotExistException, DataAccessException {
+                        throw new UserMayOrMayNotExistException("Cannot verify users in this context");
+                    }
+                });
     }
 
     @Override
@@ -325,7 +328,6 @@ public class BitbucketSecurityRealm extends SecurityRealm {
             } else {
                 throw new ConversionException("invalid node value = " + node);
             }
-
         }
     }
 
@@ -350,5 +352,4 @@ public class BitbucketSecurityRealm extends SecurityRealm {
             super(clazz);
         }
     }
-
 }

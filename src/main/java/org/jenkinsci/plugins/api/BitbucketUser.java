@@ -2,11 +2,10 @@ package org.jenkinsci.plugins.api;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import org.acegisecurity.GrantedAuthority;
-import org.acegisecurity.GrantedAuthorityImpl;
-import org.acegisecurity.userdetails.UserDetails;
 import org.apache.commons.lang.StringUtils;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.GrantedAuthorityImpl;
+import org.springframework.security.core.userdetails.UserDetails;
 
 public class BitbucketUser implements UserDetails {
 
@@ -24,8 +23,7 @@ public class BitbucketUser implements UserDetails {
         return grantedAuthorties.toArray(new GrantedAuthority[grantedAuthorties.size()]);
     }
 
-    public void addAuthority(String role)
-    {
+    public void addAuthority(String role) {
         grantedAuthorties.add(new GrantedAuthorityImpl(role));
     }
 
@@ -58,5 +56,4 @@ public class BitbucketUser implements UserDetails {
     public boolean isEnabled() {
         return true;
     }
-
 }
